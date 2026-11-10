@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR" data-t="neon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12040a">
+<title>StudyFlow</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Bloqueio: a senha mestra criptografa tudo e nunca sai do aparelho -->
+<div id="lock"><form id="lockForm" class="card">
+  <h1>StudyFlow</h1><p id="lockTxt">Digite sua senha mestra.</p>
+  <label>Senha mestra<input id="senha" type="password" autocomplete="current-password" required></label>
+  <label id="l2" hidden>Repita a senha<input id="senha2" type="password" autocomplete="new-password"></label>
+  <p id="lockMsg" class="erro" role="alert"></p><button>Entrar</button>
+</form></div>
+
+<header><h1>StudyFlow</h1><small id="sync">🔒 local</small></header>
+<main>
+  <section id="inicio" class="view"><h2 id="oi"></h2><div id="tiles" class="tiles"></div></section>
+  <section id="estudos" class="view" hidden>
+    <h2>Tabela de estudos</h2><div data-crud="estudos"></div>
+    <h2>Provas</h2><div data-crud="provas"></div>
+  </section>
+  <section id="financas" class="view" hidden>
+    <div class="mes"><button class="ghost" data-mes="-1" aria-label="Mês anterior">‹</button><h2 id="mesTxt"></h2><button class="ghost" data-mes="1" aria-label="Próximo mês">›</button></div>
+    <div id="resumo"></div>
+    <div class="chips" id="chips"></div>
+    <div id="lista"></div>
+    <div class="row" style="margin-top:12px"><button data-novo="contas">+ lançamento</button><button id="csv" class="ghost">Exportar CSV</button></div>
+  </section>
+  <section id="pomodoro" class="view" hidden>
+    <h2>Pomodoro</h2>
+    <div class="card center">
+      <div class="ring" id="ring" title="Toque para iniciar ou pausar">
+        <svg viewBox="0 0 120 120"><circle class="trilho" cx="60" cy="60" r="54"/><circle id="arc" cx="60" cy="60" r="54"/></svg>
+        <div class="miolo"><div id="tempo">25:00</div><div id="modo">FOCO</div></div>
+      </div>
+      <div class="row"><button id="pStart">Iniciar</button><button id="pReset" class="ghost">Zerar</button></div>
+      <p id="ciclos"></p>
+      <div class="row"><label>Foco (min)<input id="pFoco" type="number" value="25" min="1"></label><label>Pausa (min)<input id="pPausa" type="number" value="5" min="1"></label></div>
+    </div>
+  </section>
+  <section id="config" class="view" hidden>
+    <h2>Aparência</h2>
+    <div class="card">
+      <p>Tema</p><div id="temas" class="row"></div>
+      <p>Foto de fundo (da galeria do celular)</p>
+      <div class="row"><label class="btn">Escolher foto<input id="fFoto" type="file" accept="image/*" hidden></label><button id="semFoto" class="ghost">Remover</button></div>
+      <label>Escurecer a foto<input id="veu" type="range" min="0" max="85"></label>
+    </div>
+    <h2>Sons</h2>
+    <div class="card">
+      <label>Som dos alertas e do Pomodoro<select id="som"><option value="sino">Sino</option><option value="digital">Digital</option><option value="suave">Suave</option><option value="meu">Meu áudio</option></select></label>
+      <div class="row"><label class="btn">Escolher áudio<input id="fAud" type="file" accept="audio/*" hidden></label><button id="testar" class="ghost">Testar</button></div>
+    </div>
+    <h2>Segurança e GitHub</h2>
+    <div class="card">
+      <p>Seus dados são criptografados no aparelho (AES-256) antes de irem ao GitHub.</p>
+      <label>Repositório (usuario/repo)<input id="gRepo" placeholder="natan/studyflow-dados"></label>
+      <label>Token (fine-grained, só Contents)<input id="gTok" type="password" autocomplete="off"></label>
+      <label>Arquivo<input id="gPath" value="data.json"></label>
+      <div class="row"><button id="gSave">Salvar e sincronizar</button><button id="nBtn" class="ghost">Ativar notificações</button><button id="trancar" class="ghost">Trancar agora</button></div>
+    </div>
+    <p id="cfgMsg" class="erro" role="status"></p>
+  </section>
+</main>
+<nav>
+  <button data-go="inicio"><i>🏠</i>Início</button><button data-go="estudos"><i>📚</i>Estudos</button>
+  <button data-go="financas"><i>💸</i>Finanças</button><button data-go="pomodoro"><i>⏱️</i>Pomodoro</button><button data-go="config"><i>⚙️</i>Config</button>
+</nav>
+<div id="toast" role="status"></div>
+<dialog id="dlg"><form id="frm"></form></dialog>
+<script src="js/app.js"></script>
+</body>
+</html>
