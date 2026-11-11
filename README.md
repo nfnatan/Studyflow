@@ -23,7 +23,7 @@ Envie os arquivos para um repositório e ative Settings → Pages (`main` / root
 Crie um repositório privado só para os dados, gere o token e preencha em Config.
 Android: menu ⋮ → Instalar app. iPhone: Compartilhar → Adicionar à Tela de Início.
 Personalização (Config)
-Tema: neon, oceano, floresta, violeta, claro. Para criar outro, copie um bloco `\[data-t=...]` do CSS.
+Tema: neon, oceano, floresta, violeta, claro. Para criar outro, copie um bloco `\\\[data-t=...]` do CSS.
 Foto de fundo: escolha da galeria; é reduzida e guardada só neste aparelho. O controle Escurecer melhora a leitura.
 Sons: sino, digital, suave ou um áudio seu (até 1,5 MB), no fim do Pomodoro e nos lembretes.
 Finanças
@@ -33,6 +33,6 @@ Fixos: marque Repete todo mês para aluguel, internet, mensalidades etc. Eles ap
 Lista: filtros Todos, Pendentes, Pagos e Receitas; ✓ marca como pago/recebido; tocar no item edita.
 Exportar CSV: baixa o mês atual para abrir no Excel ou Google Sheets.
 Alertas
-Conferidos a cada 30 s: início de cada bloco de estudo, prova em até 2 dias e conta vencendo/atrasada, esta de hora em hora entre 8h e 22h (`HORAS\_ALERTA` em `js/app.js`) até ser marcada como paga. Funcionam com o app aberto ou em segundo plano; com o app fechado seria preciso um servidor de push (o app não tem). Som e vibração dependem de o aparelho permitir; no iPhone as notificações exigem o app instalado (iOS 16.4+).
+Conferidos a cada 30 s: início de cada bloco de estudo, prova em até 2 dias e conta vencendo/atrasada, esta de hora em hora entre 8h e 22h (`HORAS\\\_ALERTA` em `js/app.js`) até ser marcada como paga. Funcionam com o app aberto ou em segundo plano; com o app fechado seria preciso um servidor de push (o app não tem). Som e vibração dependem de o aparelho permitir; no iPhone as notificações exigem o app instalado (iOS 16.4+).
 Dados
-Cifrado em `data.json`; por dentro: `{ salario, estudos:\[{id,dia,ini,fim,mat,assunto}], provas:\[{id,mat,data,conteudo}], contas:\[{id,desc,valor,tipo,cat,venc,rec,pago,pagos,criado}] }`. Nova lista com CRUD: adicione uma entrada em `SCHEMA`, um `<div data-crud="nome">` e a chave em `DB`.
+Cifrado em `data.json`; por dentro: `{ salario, estudos:\\\[{id,dia,ini,fim,mat,assunto}], provas:\\\[{id,mat,data,conteudo}], contas:\\\[{id,desc,valor,tipo,cat,venc,rec,pago,pagos,criado}] }`. Nova lista com CRUD: adicione uma entrada em `SCHEMA`, um `<div data-crud="nome">` e a chave em `DB`.
