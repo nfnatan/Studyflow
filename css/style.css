@@ -85,3 +85,30 @@ nav button[aria-current=true]{background:color-mix(in srgb,var(--ac) 26%,transpa
 .chip{background:var(--glass);color:var(--txt);box-shadow:inset 0 0 0 1px var(--line);padding:8px 16px;min-height:40px;flex:none}
 .chip[aria-pressed=true]{background:linear-gradient(135deg,var(--ac),var(--ac2));color:var(--on)}
 li small{color:var(--mut)}
+
+/* ===== Acabamento "pro": tipografia, selos, ícones e menu lateral no PC ===== */
+body{font-size:16px;font-variant-numeric:tabular-nums}
+h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:28px 0 10px}
+.mes h2{font-size:20px;text-transform:capitalize;letter-spacing:-.01em;color:var(--txt)}
+#oi{font-size:28px;text-transform:none;letter-spacing:-.02em;color:var(--txt);margin:18px 0 14px}
+.card,li,.tile,.kpi{border-radius:16px;box-shadow:inset 0 1px 0 #ffffff14,0 10px 30px -12px #0008}
+button,.btn,input,select{border-radius:12px}
+.chip{border-radius:999px}
+#sync{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--line);font-size:13px}
+#sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mut)}
+#sync[data-s=ok]::before{background:#37ffb0;box-shadow:0 0 8px #37ffb0}
+#sync[data-s=err]::before{background:#ffb24d}
+.kpi b{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;background:color-mix(in srgb,var(--ac) 22%,transparent);vertical-align:1px}
+.st{font-style:normal;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--line);color:var(--mut);white-space:nowrap}
+.st.ok{background:#37ffb022;color:#37ffb0}.st.bad{background:#ff5d7326;color:#ff8a9a}.st.warn{background:#ffb24d26;color:#ffc36e}
+.cd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.chk{display:flex;align-items:center;gap:10px;color:var(--txt)}
+nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button{justify-items:center;align-content:center;gap:2px;font-weight:500;border-radius:14px}
+@media(min-width:900px){
+  body{padding:0 0 40px 248px}
+  nav{left:12px;top:12px;bottom:12px;transform:none;width:220px;flex-direction:column;justify-content:flex-start;gap:4px;padding:14px 10px;border-radius:20px}
+  nav button{flex:none;display:flex;gap:12px;align-items:center;justify-content:flex-start;padding:0 14px;min-height:46px;font-size:15px}
+  main,header{max-width:900px}header{padding-top:22px}
+}
