@@ -60,6 +60,7 @@ const TE = new TextEncoder(), TD = new TextDecoder();
 const b64 = (u) => { let s = ''; new Uint8Array(u).forEach((x) => (s += String.fromCharCode(x))); return btoa(s); };
 const unb = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 let SENHA = '', SALT, KEY, DB = { estudos: [], provas: [], contas: [], salario: 0 }, CFG = {};
+let ABERTO = false, LEMBRAR = false;                  // ABERTO: já destrancado; LEMBRAR: chave guardada neste aparelho
 const derivar = async (salt) => crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
   await crypto.subtle.importKey('raw', TE.encode(SENHA), 'PBKDF2', false, ['deriveKey']), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 async function cifrar(obj) {
@@ -89,14 +90,34 @@ $('#lockForm').onsubmit = async (ev) => {
       localStorage.removeItem('sf-db'); localStorage.removeItem('sf-cfg');  // apaga dados abertos da versão 1
       await salvarCofre();
     }
-    $('#lock').hidden = true; iniciar();
+    LEMBRAR = $('#lembrar0').checked; if (LEMBRAR) await idb('put', KEY); $('#lock').hidden = true; iniciar();
   } catch (x) { SENHA = ''; $('#lockMsg').textContent = x === 'curta' ? 'Use pelo menos 8 caracteres.' : x === 'dif' ? 'As senhas não conferem.' : 'Senha incorreta.'; }
 };
 if (!localStorage.getItem('sf-vault')) { $('#l2').hidden = false; $('#lockTxt').textContent = 'Crie uma senha mestra. Guarde-a bem: sem ela os dados não podem ser recuperados.'; }
 
+/* "Manter aberto neste aparelho": guarda a CHAVE (não a senha) no IndexedDB como chave não exportável.
+ * Assim recarregar a página não pede a senha. O GitHub continua só com dados cifrados. "Trancar agora" apaga a chave. */
+const idb = (m, v) => new Promise((ok, no) => {
+  const q = indexedDB.open('sf', 1);
+  q.onupgradeneeded = () => q.result.createObjectStore('k');
+  q.onerror = no;
+  q.onsuccess = () => {
+    const st = q.result.transaction('k', m === 'get' ? 'readonly' : 'readwrite').objectStore('k');
+    const r = m === 'get' ? st.get('chave') : m === 'put' ? st.put(v, 'chave') : st.delete('chave');
+    r.onsuccess = () => ok(r.result); r.onerror = no;
+  };
+});
+(async () => {                                          // ao abrir: tenta destrancar sozinho; se não der, mostra o bloqueio
+  try {
+    const v = localStorage.getItem('sf-vault'), k = v && await idb('get');
+    if (k) { SALT = unb(JSON.parse(v).s); KEY = k; const o = await decifrar(v); DB = { ...DB, ...o.db }; CFG = o.cfg || {}; LEMBRAR = true; iniciar(); return; }
+  } catch (x) { try { await idb('del'); } catch (y) {} }
+  $('#lock').hidden = false;
+})();
+
 /* ---------- 4) GitHub como banco (sempre com dados cifrados) ---------- */
 let sha = null, timer;                                  // sha = versão do arquivo no GitHub (exigida para atualizar)
-const setSync = (t) => ($('#sync').textContent = t);
+const setSync = (t, st = '') => { $('#sync').textContent = t; $('#sync').dataset.s = st; };   // st: ok | err
 const api = () => `https://api.github.com/repos/${CFG.repo}/contents/${CFG.path || 'data.json'}`;
 const hdr = () => ({ Authorization: 'Bearer ' + CFG.token, Accept: 'application/vnd.github+json' });
 const pronto = () => CFG.repo && CFG.token;
@@ -109,9 +130,9 @@ async function ghGet() {
     const j = await r.json(); sha = j.sha;
     const txt = atob(j.content.replace(/\n/g, '')), p = JSON.parse(txt);
     DB = { ...DB, ...(p.d ? await decifrar(txt) : p) };  // sem "d" = arquivo antigo aberto: importa e recifra
-    await salvarCofre(); setSync('🔒 sincronizado');
+    await salvarCofre(); setSync('Sincronizado', 'ok');
     if (!p.d) await ghPut();
-  } catch (x) { setSync('⚠️ offline ou senha diferente'); }
+  } catch (x) { setSync('Offline ou senha diferente', 'err'); }
 }
 async function ghPut() {
   if (!pronto()) return;
@@ -119,8 +140,8 @@ async function ghPut() {
     const body = { message: 'StudyFlow: atualiza dados', content: btoa(await cifrar(DB)), sha: sha || undefined };
     const r = await fetch(api(), { method: 'PUT', headers: hdr(), body: JSON.stringify(body) });
     if (!r.ok) throw 0;
-    sha = (await r.json()).content.sha; setSync('🔒 sincronizado');
-  } catch (x) { setSync('⚠️ erro de sync'); }
+    sha = (await r.json()).content.sha; setSync('Sincronizado', 'ok');
+  } catch (x) { setSync('Erro de sincronização', 'err'); }
 }
 function salvar() {                                     // chamado após qualquer mudança
   salvarCofre();
@@ -235,14 +256,16 @@ function financas() {
   $('#mesTxt').textContent = new Date(MES + '-01T00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   $('#resumo').innerHTML = `<div class="kpis">${kpi('Receitas', brl(R))}${kpi('Despesas', brl(D))}${kpi('Saldo', brl(S), S >= 0 ? 'ok' : 'ruim')}${kpi('A pagar', brl(D - P))}</div>` +
     `<div class="card"><label>Salário base (R$)<input id="sal" type="number" step="0.01" min="0" value="${DB.salario || ''}"></label>` +
-    `<div class="bar"><i style="width:${pct}%"></i></div><p>${pct}% da receita comprometida · ${S >= 0 ? '✔ o salário dá, sobram ' + brl(S) : '✖ não dá, faltam ' + brl(-S)}</p>` +
+    `<div class="bar"><i style="width:${pct}%"></i></div><p>${pct}% da receita comprometida · <b class="${S >= 0 ? 'ok' : 'ruim'}">${S >= 0 ? 'O salário dá: sobram ' + brl(S) : 'Não dá: faltam ' + brl(-S)}</b></p>` +
     (cats.length ? `<div class="cats"><div class="donut" style="background:conic-gradient(${cone})"></div><div>${cats.map(([c, v, cor]) => `<div class="lg"><i style="background:${cor}"></i><span>${c}</span><b>${brl(v)}</b></div>`).join('')}</div></div>` : '') + '</div>';
   $('#sal').onchange = (ev) => { DB.salario = +ev.target.value || 0; salvar(); };
   $('#chips').innerHTML = [['todos', 'Todos'], ['pend', 'Pendentes'], ['pago', 'Pagos'], ['rec', 'Receitas']].map(([k, l]) => `<button class="chip" data-filtro="${k}" aria-pressed="${FILTRO === k}">${l}</button>`).join('');
   const ver = L.filter((o) => (FILTRO === 'pend' ? !o.pago && o.x.tipo !== 'receita' : FILTRO === 'pago' ? o.pago : FILTRO === 'rec' ? o.x.tipo === 'receita' : true)).sort((a, b) => a.data.localeCompare(b.data));
   $('#lista').innerHTML = '<ul>' + (ver.map((o) => {
-    const d = diff(o.data), r = o.x.tipo === 'receita', st = o.pago ? (r ? 'recebido' : 'pago') : d < 0 ? 'atrasada' : d === 0 ? 'hoje' : 'em ' + d + ' d';
-    return `<li class="${o.pago ? 'pago' : !r && d <= 1 ? 'alerta' : ''}"><span data-edit="contas:${o.x.id}"><b>${e(o.x.desc)}</b> ${o.rec ? '🔁' : ''}<br><small>${fmt(o.data)} · ${e(o.x.cat || 'Outros')} · ${st}</small></span>` +
+    const d = diff(o.data), r = o.x.tipo === 'receita', cat = o.x.cat || 'Outros';
+    const st = o.pago ? [r ? 'Recebido' : 'Pago', 'ok'] : d < 0 ? ['Atrasada', 'bad'] : d === 0 ? ['Hoje', 'warn'] : d === 1 ? ['Amanhã', 'warn'] : [`Em ${d} d`, '']; // [texto, cor do selo]
+    return `<li class="${o.pago ? 'pago' : !r && d <= 1 ? 'alerta' : ''}"><span data-edit="contas:${o.x.id}"><b>${e(o.x.desc)}</b> ${o.rec ? '<span class="tag">fixo</span>' : ''}<br>` +
+      `<small><i class="cd" style="background:${CORES[Math.max(0, CATS.indexOf(cat))]}"></i>${fmt(o.data)} · ${e(cat)}</small></span><em class="st ${st[1]}">${st[0]}</em>` +
       `<b class="${r ? 'ok' : ''}">${r ? '+' : '−'}${brl(o.x.valor)}</b><button data-pago="${o.x.id}" aria-label="Alternar pago">${o.pago ? '↺' : '✓'}</button><button data-del="contas:${o.x.id}" aria-label="Excluir">✕</button></li>`;
   }).join('') || '<li class="vazio">Nenhum lançamento aqui. Toque em “+ lançamento”.</li>') + '</ul>';
 }
@@ -327,14 +350,16 @@ $('#gSave').onclick = async () => {
   CFG = { repo: $('#gRepo').value.trim(), token: $('#gTok').value.trim() || CFG.token, path: $('#gPath').value.trim() || 'data.json' };
   $('#gTok').value = ''; await salvarCofre(); ghGet().then(renderAll);
 };
-$('#trancar').onclick = () => location.reload();       // recarregar apaga a senha da memória e volta ao bloqueio
+$('#trancar').onclick = async () => { await idb('del'); location.reload(); };
+$('#lembrar').onchange = async (ev) => { LEMBRAR = ev.target.checked; LEMBRAR ? await idb('put', KEY) : await idb('del'); };       // recarregar apaga a senha da memória e volta ao bloqueio
 let oculto = 0;                                         // tranca sozinho depois de um tempo em segundo plano
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) oculto = Date.now();
-  else if (SENHA && !P.fim && Date.now() - oculto > AUTO_TRANCA_MIN * 6e4) location.reload();
-  else if (SENHA) verifica();
+  else if (ABERTO && !LEMBRAR && !P.fim && Date.now() - oculto > AUTO_TRANCA_MIN * 6e4) location.reload();
+  else if (ABERTO) verifica();
 });
 function iniciar() {                                    // roda depois de destrancar
+  ABERTO = true; $('#lembrar').checked = LEMBRAR;
   $('#gRepo').value = CFG.repo || ''; $('#gPath').value = CFG.path || 'data.json';
   $('#gTok').placeholder = CFG.token ? '(guardado, criptografado)' : '';
   go('inicio'); renderAll(); ghGet().then(() => { renderAll(); verifica(); });
