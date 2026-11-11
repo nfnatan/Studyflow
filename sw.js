@@ -1,5 +1,5 @@
 /* Service worker: abre o app offline, exibe notificações e abre o app ao tocar nelas. */
-const C = 'studyflow-v3', ARQ = ['./', 'index.html', 'css/style.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png'];
+const C = 'studyflow-v4', ARQ = ['./', 'index.html', 'css/style.css', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png'];
 self.addEventListener('install', (ev) => { self.skipWaiting(); ev.waitUntil(caches.open(C).then((c) => c.addAll(ARQ))); });
 self.addEventListener('activate', (ev) => ev.waitUntil(caches.keys().then((k) => Promise.all(k.filter((n) => n !== C).map((n) => caches.delete(n)))).then(() => clients.claim())));
 self.addEventListener('fetch', (ev) => {
